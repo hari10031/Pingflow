@@ -1,7 +1,7 @@
 // Central place to tweak project-wide constants.
 // Update GITHUB_REPO to point at your own fork once deployed.
-export const GITHUB_REPO = 'https://github.com/hari10031/Pingflow'
-export const DOCS_URL = 'https://github.com/your-username/PingFlow#readme'
+export const GITHUB_REPO = 'https://github.com/hari10031/pingflow'
+export const DOCS_URL = 'https://github.com/hari10031/pingflow#readme'
 
 // How often GitHub Actions pings each service (minutes).
 export const PING_INTERVAL_MINUTES = 10
