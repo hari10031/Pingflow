@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 PingFlow documentation
+    url: https://github.com/hari10031/pingflow#readme
+    about: How PingFlow works and how to run your own.

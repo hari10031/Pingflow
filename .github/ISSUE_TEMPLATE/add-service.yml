@@ -1,0 +1,50 @@
+name: Add a service
+description: Request a backend URL to be added to PingFlow's ping list.
+title: 'Add service: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for submitting a service! A maintainer will review it and, if it looks good, add it
+        to `services.json`. Once merged, GitHub Actions starts pinging it every 10 minutes.
+  - type: input
+    id: service-name
+    attributes:
+      label: Service name
+      placeholder: Portfolio API
+    validations:
+      required: true
+  - type: input
+    id: service-url
+    attributes:
+      label: Health URL
+      description: A lightweight endpoint that returns quickly, e.g. /health.
+      placeholder: https://example.onrender.com/health
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Host platform
+      options:
+        - Render
+        - Railway
+        - Fly.io
+        - Cyclic
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      placeholder: Anything else we should know?
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I own or control this endpoint, and it's safe to ping every 10 minutes.
+          required: true

@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-void-800 text-ink-100 font-sans antialiased;
+    background-image: radial-gradient(
+        60% 50% at 50% -10%,
+        rgba(16, 185, 129, 0.1),
+        transparent 60%
+      ),
+      radial-gradient(40% 40% at 100% 0%, rgba(34, 211, 238, 0.08), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgba(16, 185, 129, 0.3);
+    color: #ecfdf5;
+  }
+
+  /* Visible keyboard focus everywhere */
+  :focus-visible {
+    outline: 2px solid #34d399;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #070b10;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1b2734;
+    border-radius: 999px;
+    border: 2px solid #070b10;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #28384a;
+  }
+}
+
+@layer components {
+  /* Glassmorphism surface */
+  .glass {
+    @apply border border-white/[0.06] bg-white/[0.025] backdrop-blur-xl;
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+      0 24px 60px -30px rgba(0, 0, 0, 0.8);
+  }
+
+  .glass-hover {
+    @apply transition-all duration-300 hover:border-signal-400/30 hover:bg-white/[0.04];
+  }
+
+  .gradient-text {
+    @apply bg-signal-gradient bg-clip-text text-transparent;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-signal-400/90;
+  }
+
+  .section-pad {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  /* Thin animated rule used as a structural divider */
+  .signal-rule {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(16, 185, 129, 0.5),
+      rgba(34, 211, 238, 0.5),
+      transparent
+    );
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

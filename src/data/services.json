@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Portfolio API",
+    "url": "https://example.onrender.com/health"
+  },
+  {
+    "name": "Workshop API",
+    "url": "https://example.up.railway.app/health"
+  }
+]

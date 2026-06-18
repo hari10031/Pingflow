@@ -1,0 +1,52 @@
+name: Label service requests
+
+# Tags new "Add service:" submissions with a label and posts a short
+# acknowledgement, so the maintainer can triage them at a glance.
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue
+            const title = issue.title || ''
+            if (!/^Add service:/i.test(title)) return
+
+            const label = 'service-request'
+
+            // Create the label on first use so forks work out of the box.
+            try {
+              await github.rest.issues.getLabel({ ...context.repo, name: label })
+            } catch {
+              await github.rest.issues.createLabel({
+                ...context.repo,
+                name: label,
+                color: '10b981',
+                description: 'Request to add a service to services.json',
+              })
+            }
+
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number: issue.number,
+              labels: [label],
+            })
+
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: issue.number,
+              body: [
+                'Thanks for the submission! 🫀',
+                '',
+                'A maintainer will review the endpoint and, once approved, add it to `services.json`.',
+                'After that, GitHub Actions starts pinging it every 10 minutes.',
+              ].join('\n'),
+            })
