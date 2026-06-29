@@ -84,26 +84,53 @@ The **Try it** section lets a visitor paste a backend URL and:
   time. Because browsers enforce CORS, endpoints without CORS headers come back as *"Reachable
   (status hidden)"* rather than a status code — that's a browser rule, not a bug. The GitHub
   Action runs server-side and always reads the true status.
-- **Submit a service** — opens a **pre-filled GitHub issue** with the name and URL already entered.
-  A maintainer reviews it and, if it's good, adds it to `services.json`. No token, no signup, no
-  backend — the visitor just needs a GitHub account to file the issue.
+- **Add** — posts to `/api/add-service`, a Vercel serverless function that validates the endpoint
+  and **commits it to `services.json` instantly**. No GitHub account, no issue, no copy-paste.
 
-### Why submissions instead of direct writes?
+### Instant add via the Vercel function
 
-A public, frontend-only site **can't store URLs that strangers submit** — there's no database, and
-the browser can't write to the repo without a secret token (which can't be exposed publicly). So
-the public path is **propose → review → merge**: visitors submit, you approve. That keeps every
-rule intact (no backend, no database, no auth) while still letting anyone request a service.
+`api/add-service.js` runs server-side and commits with a GitHub token kept in a **Vercel env var**
+— so the token is never shipped to the browser (the safe alternative to a client-side token). It
+**only accepts** a service that is a valid **`https`** URL, **reachable** (responds < 500), **not a
+duplicate**, and within the list cap (100). Shared guardrails live in `api/_lib/validate.js`; the
+commit logic in `api/_lib/github.js`.
 
-### For maintainers: approving a submission
+**Required Vercel environment variables** (Project → Settings → Environment Variables):
 
-1. A submission arrives as a GitHub issue (via `.github/ISSUE_TEMPLATE/add-service.yml`).
-2. Sanity-check the URL (the **Check response** button on the site helps).
-3. Add the entry to `src/data/services.json` and commit — that's the approval.
-4. Close the issue. The next workflow run begins pinging it.
+| Variable | Value |
+| --- | --- |
+| `GITHUB_TOKEN` | Fine-grained PAT, **Contents: Read and write** on your repo |
+| `GITHUB_OWNER` | e.g. `hari10031` |
+| `GITHUB_REPO` | e.g. `pingflow` |
+| `GITHUB_BRANCH` | `main` |
+| `SERVICES_PATH` | `src/data/services.json` |
+| `WAKE_SECRET` | *(optional)* gate for `/api/wake` |
 
-> Set `GITHUB_REPO` in `src/config.js` to your repo so the **Submit** button points at the right
-> issue tracker.
+> The `vercel.json` rewrite excludes `/api/` (`"/((?!api/).*)"`) so the functions are reachable
+> while the SPA still handles everything else. Each add commits → Vercel redeploys (~1 min) before
+> the dashboard reflects it.
+
+### Wake on demand — `/api/wake`
+
+`GET /api/wake` pings every service in the list and returns a status + latency summary;
+`GET /api/wake?url=https://…` pings just one. Hit it manually or from an uptime monitor to warm
+services any time. The every-10-minute schedule still runs in GitHub Actions
+(`ping-services.yml`) — free and frequent, whereas Vercel Hobby crons only run once per day.
+
+### Local testing
+
+Plain `npm run dev` (Vite) does **not** serve `/api/*`. Use the Vercel CLI:
+
+```bash
+npm i -g vercel
+vercel dev      # serves the site + the functions, with your linked env vars
+```
+
+### GitHub-issue fallback (optional)
+
+The older issue-based flow still works if someone files an `Add service:` issue
+(`.github/workflows/auto-add-service.yml` + `scripts/add-from-issue.mjs`). Keep it as a no-account
+path, or delete those files for a single add route.
 
 ## ➕ Adding a service manually
 
@@ -169,10 +196,12 @@ Edit the cron expression in the workflow (`*/10` → `*/5` for every 5 minutes, 
 ## ☁️ Deploying to Vercel
 
 1. Push this repo to GitHub.
-2. Import it in Vercel — it auto-detects Vite (`vercel.json` is included as a fallback).
-3. Deploy. No environment variables required.
+2. Import it in Vercel — it auto-detects Vite and the `api/` functions.
+3. Add the environment variables from the table above (needed for the **Add** function).
+4. Deploy.
 
-The pinging happens in **GitHub Actions**, independent of where the site is hosted.
+The pinging schedule runs in **GitHub Actions**, independent of where the site is hosted; the
+`api/` functions handle instant adds and on-demand wakes.
 
 ---
 

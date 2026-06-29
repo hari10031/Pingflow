@@ -5,8 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for submitting a service! A maintainer will review it and, if it looks good, add it
-        to `services.json`. Once merged, GitHub Actions starts pinging it every 10 minutes.
+        Submit this and PingFlow checks the endpoint automatically. If it's a reachable `https`
+        URL, it's added to `services.json` within a minute and pinged every 10 minutes — no manual
+        review needed. If something's off, you'll get a comment explaining why.
   - type: input
     id: service-name
     attributes:

@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Activity,
+  ArrowRight,
+  CheckCircle2,
   ExternalLink,
-  GitPullRequestArrow,
   Loader2,
-  Send,
+  Plus,
   ShieldAlert,
   Wifi,
   WifiOff,
@@ -13,30 +14,20 @@ import {
 } from 'lucide-react'
 import SectionHeading from './SectionHeading'
 import { probeUrl, normalizeUrl } from '../lib/probe'
-import { GITHUB_REPO } from '../config'
-
-function buildIssueUrl({ name, url }) {
-  const params = new URLSearchParams({
-    template: 'add-service.yml',
-    title: `Add service: ${name}`,
-    'service-name': name,
-    'service-url': url,
-  })
-  return `${GITHUB_REPO}/issues/new?${params.toString()}`
-}
 
 export default function TryIt() {
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [checking, setChecking] = useState(false)
+  const [adding, setAdding] = useState(false)
   const [result, setResult] = useState(null)
-  const [submitted, setSubmitted] = useState(null)
+  const [added, setAdded] = useState(null)
   const [error, setError] = useState('')
 
   async function handleCheck(e) {
     e.preventDefault()
     setError('')
-    setSubmitted(null)
+    setAdded(null)
     if (!normalizeUrl(url)) {
       setError('Enter a valid URL, e.g. https://api.example.com/health')
       return
@@ -47,12 +38,13 @@ export default function TryIt() {
     setResult(res)
   }
 
-  function handleSubmit() {
+  async function handleAdd() {
     setError('')
     setResult(null)
+    setAdded(null)
     const cleanUrl = normalizeUrl(url)
     if (!cleanUrl) {
-      setError('Enter a valid URL before submitting it.')
+      setError('Enter a valid URL before adding it.')
       return
     }
     let label = name.trim()
@@ -63,18 +55,35 @@ export default function TryIt() {
         label = 'My Service'
       }
     }
-    const issueUrl = buildIssueUrl({ name: label, url: cleanUrl })
-    setSubmitted({ name: label, url: issueUrl })
-    // Opened by a direct click, so popup blockers leave this alone.
-    window.open(issueUrl, '_blank', 'noopener,noreferrer')
+
+    setAdding(true)
+    try {
+      const res = await fetch('/api/add-service', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: label, url: cleanUrl }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setError(data.error || 'Could not add the service. Please try again.')
+        return
+      }
+      setAdded({ name: label, url: cleanUrl, commitUrl: data.commitUrl })
+      setName('')
+      setUrl('')
+    } catch {
+      setError('Network error — please try again.')
+    } finally {
+      setAdding(false)
+    }
   }
 
   return (
     <section id="try" className="section-pad py-20 sm:py-28">
       <SectionHeading
         eyebrow="Try it"
-        title="Check a URL, then submit it"
-        subtitle="Ping any backend URL right here in your browser, then submit it for review. Approved services get added to services.json and pinged every 10 minutes."
+        title="Check a URL, then add it"
+        subtitle="Ping any backend URL right here in your browser, then add it. Reachable services are committed to services.json instantly and pinged every 10 minutes."
       />
 
       <motion.div
@@ -129,11 +138,16 @@ export default function TryIt() {
             </button>
             <button
               type="button"
-              onClick={handleSubmit}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-signal-gradient px-5 py-3 font-semibold text-void-900 shadow-glow transition-transform hover:-translate-y-0.5"
+              onClick={handleAdd}
+              disabled={adding}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-signal-gradient px-5 py-3 font-semibold text-void-900 shadow-glow transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <Send className="h-4 w-4" strokeWidth={2.4} />
-              Submit a service
+              {adding ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" strokeWidth={2.6} />
+              )}
+              {adding ? 'Adding…' : 'Add'}
             </button>
           </div>
         </form>
@@ -146,12 +160,12 @@ export default function TryIt() {
 
         <AnimatePresence mode="wait">
           {result && <ResultPanel key="result" result={result} />}
-          {submitted && <SubmittedPanel key="submitted" submitted={submitted} />}
+          {added && <AddedPanel key="added" added={added} />}
         </AnimatePresence>
 
         <p className="mt-5 text-center font-mono text-[11px] leading-relaxed text-ink-600">
-          Submitting opens a pre-filled GitHub issue. A maintainer reviews it before it’s added —
-          no account beyond GitHub, nothing installed.
+          Add commits the service to services.json for you. Only reachable https URLs are accepted —
+          no account, no signup.
         </p>
       </motion.div>
     </section>
@@ -246,26 +260,37 @@ function ResultPanel({ result }) {
   )
 }
 
-function SubmittedPanel({ submitted }) {
+function AddedPanel({ added }) {
   return (
     <Panel tone="good">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <span className="inline-flex items-center gap-2 font-display font-semibold">
-          <GitPullRequestArrow className="h-5 w-5 text-signal-400" />
-          Submitting “{submitted.name}”
+          <CheckCircle2 className="h-5 w-5 text-signal-400" />
+          Added “{added.name}” to services.json
         </span>
-        <a
-          href={submitted.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-signal-300 hover:text-signal-400"
-        >
-          Open the issue <ExternalLink className="h-4 w-4" />
-        </a>
+        <div className="flex items-center gap-4">
+          {added.commitUrl && (
+            <a
+              href={added.commitUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-ink-300 hover:text-ink-100"
+            >
+              View commit <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+          <a
+            href="#services"
+            className="group inline-flex items-center gap-1.5 text-sm font-medium text-signal-300 hover:text-signal-400"
+          >
+            Dashboard
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </a>
+        </div>
       </div>
       <p className="mt-2 text-sm text-ink-300">
-        A pre-filled GitHub issue should have opened in a new tab. Submit it there — a maintainer
-        reviews each request before it joins the ping list. If nothing opened, use the link above.
+        Committed to the repo. It starts getting pinged on the next scheduled run, and appears on
+        the dashboard once the site redeploys (about a minute).
       </p>
     </Panel>
   )
