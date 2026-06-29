@@ -49,7 +49,8 @@ export async function getServicesFile() {
     headers: headers(cfg.token),
   })
   if (!res.ok) {
-    throw new Error(`Could not read services.json (${res.status}${(await messageFrom(res)) ? `: ${await messageFrom(res)}` : ''})`)
+    const msg = await messageFrom(res)
+    throw new Error(`Could not read services.json (${res.status}${msg ? `: ${msg}` : ''})`)
   }
   const data = await res.json()
   let services = []
@@ -82,5 +83,6 @@ export async function commitServices(services, sha, message) {
   }
   // 409 = the file moved under us (concurrent commit); caller may retry with a fresh sha.
   if (res.status === 409) return { ok: false, conflict: true }
-  return { ok: false, error: `Commit failed (${res.status}${(await messageFrom(res)) ? `: ${await messageFrom(res)}` : ''})` }
+  const msg = await messageFrom(res)
+  return { ok: false, error: `Commit failed (${res.status}${msg ? `: ${msg}` : ''})` }
 }
