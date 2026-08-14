@@ -208,6 +208,3 @@ The pinging schedule runs in **GitHub Actions**, independent of where the site i
 
 ---
 
-## 📄 License
-
-MIT — use it, fork it, ship it.

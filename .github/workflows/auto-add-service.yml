@@ -63,6 +63,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data/services.json
           git commit -m "Add service via #${ISSUE_NUM}"
+          git pull --rebase origin main
           git push
 
       - name: Confirm and close

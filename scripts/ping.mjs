@@ -42,8 +42,14 @@ async function pingService(service) {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const { ok, status, elapsed } = await pingOnce(service.url)
-      if (ok) {
-        console.log(`✅ ${service.name} — ${status} in ${elapsed}ms (attempt ${attempt})`)
+      if (status && status < 500) {
+        if (ok) {
+          console.log(`✅ ${service.name} — HTTP ${status} in ${elapsed}ms (attempt ${attempt})`)
+        } else {
+          console.log(
+            `ℹ️  ${service.name} — HTTP ${status} in ${elapsed}ms (awake, non-200)`,
+          )
+        }
         return { name: service.name, ok: true, status, elapsed }
       }
       console.log(
